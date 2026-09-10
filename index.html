@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RiffSketch — Guitar Riff Sketchpad</title>
+<style>
+  :root{
+    --bg: #0c0c0e;
+    --panel: #17171a;
+    --panel-2: #1e1e22;
+    --border: #2b2b30;
+    --border-strong: #3a3a40;
+    --text: #e6e6e8;
+    --text-dim: #9a9aa2;
+    --accent: #d98c3a;
+    --accent-2: #e0a75e;
+    --danger: #c14b4b;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0;
+    padding:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+  }
+
+  body{
+    padding: 20px 20px 60px;
+    max-width: 980px;
+    margin: 0 auto;
+  }
+
+  /* ---------- Header ---------- */
+  header.app-header{
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+  }
+
+  .brand{
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .tagline{
+    color: var(--accent-2);
+    font-size: 0.85rem;
+    margin: 4px 0 0;
+    font-family: var(--mono);
+  }
+
+  .subtext{
+    color: var(--text-dim);
+    font-size: 0.82rem;
+    margin: 6px 0 0;
+    max-width: 640px;
+  }
+
+  /* ---------- Panels ---------- */
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  .panel h2{
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+
+  .controls-row{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+  }
+
+  .control-group{
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .control-group label{
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  select, input[type="number"]{
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    padding: 6px 8px;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+  }
+
+  select:focus, input:focus, button:focus{
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  input[type="number"]{ width: 70px; }
+
+  .btn{
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    padding: 7px 14px;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+
+  .btn:hover{
+    background: #26262b;
+    border-color: var(--accent);
+  }
+
+  .btn-primary{
+    background: var(--accent);
+    color: #1a1204;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+
+  .btn-primary:hover{
+    background: var(--accent-2);
+    border-color: var(--accent-2);
+  }
+
+  .btn-danger{
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+  }
+
+  .btn-group{
+    display: flex;
+    gap: 8px;
+  }
+
+  /* ---------- Grid ---------- */
+  .grid-wrapper{
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .string-row{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 3px 0;
+  }
+
+  .string-label{
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    width: 36px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .string-cells{
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .step-cell{
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    min-width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.1s ease, background 0.1s ease;
+  }
+
+  .step-cell:hover{
+    border-color: var(--border-strong);
+  }
+
+  .step-cell.has-note{
+    color: var(--accent-2);
+    font-weight: 700;
+  }
+
+  .step-cell.selected{
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent) inset;
+  }
+
+  .step-cell.playing{
+    background: #2a2416;
+    border-color: var(--accent);
+  }
+
+  /* ---------- Fret palette ---------- */
+  .fret-palette{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .fret-btn{
+    min-width: 36px;
+    text-align: center;
+  }
+
+  .palette-hint{
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin: 0 0 10px;
+  }
+
+  .manual-fret-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    gap:8px;
+    margin: 0 0 12px;
+  }
+
+  .manual-fret-row .control-group{
+    min-width: 130px;
+  }
+
+  #fretInput{
+    width: 92px;
+  }
+
+  .typing-hint{
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--accent-2);
+    min-height: 1em;
+  }
+
+  /* ---------- TAB output ---------- */
+  #tabOutput{
+    background: #0a0a0b;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--accent-2);
+  }
+
+  .tab-actions{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .copy-confirm{
+    font-size: 0.78rem;
+    color: var(--accent-2);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .copy-confirm.show{ opacity: 1; }
+
+  /* ---------- About ---------- */
+  footer.about{
+    margin-top: 30px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.76rem;
+    line-height: 1.6;
+  }
+
+
+  /* ---------- Utility / usability polish ---------- */
+  .panel-heading-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:10px;
+    flex-wrap:wrap;
+  }
+
+  .panel-heading-row h2{
+    margin:0;
+  }
+
+  .micro-help{
+    color:var(--text-dim);
+    font-size:0.74rem;
+    margin:0;
+  }
+
+  .selected-readout{
+    font-family:var(--mono);
+    color:var(--accent-2);
+    font-size:0.74rem;
+  }
+
+  .step-number-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:0 0 4px;
+  }
+
+  .step-number-spacer{
+    width:36px;
+    flex-shrink:0;
+  }
+
+  .step-numbers{
+    display:grid;
+    gap:4px;
+  }
+
+  .step-number{
+    min-width:34px;
+    text-align:center;
+    color:#686870;
+    font-family:var(--mono);
+    font-size:0.64rem;
+    user-select:none;
+  }
+
+  .step-number.beat{
+    color:var(--accent-2);
+  }
+
+  .step-cell.beat-start{
+    border-left-color:#47474e;
+  }
+
+  .step-number.playing{
+    color:var(--accent);
+    font-weight:700;
+  }
+
+  .fret-btn:disabled,
+  #fretClearBtn:disabled{
+    opacity:.38;
+    cursor:not-allowed;
+  }
+
+  .tool-note{
+    margin:10px 0 0;
+    color:var(--text-dim);
+    font-size:0.72rem;
+    line-height:1.45;
+  }
+
+  .shortcut{
+    display:inline-block;
+    font-family:var(--mono);
+    border:1px solid var(--border-strong);
+    background:var(--panel-2);
+    border-radius:3px;
+    padding:1px 5px;
+    color:var(--text);
+  }
+
+  .tab-actions{
+    flex-wrap:wrap;
+  }
+
+  .btn-subtle{
+    color:var(--text-dim);
+  }
+
+  @media (max-width: 560px){
+    .controls-row{ gap: 10px; }
+    .string-label{ width: 30px; font-size: 0.7rem; }
+    .step-number-spacer{ width:30px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <p class="brand">RIFFSKETCH</p>
+  <p class="tagline">Capture the riff before you forget it.</p>
+  <p class="subtext">Sketch a riff, hear it instantly, and export the TAB — no DAW required.</p>
+</header>
+
+<main>
+
+  <!-- Riff settings -->
+  <section class="panel">
+    <h2>Riff Settings</h2>
+    <div class="controls-row">
+      <div class="control-group">
+        <label for="tuningSelect">Tuning</label>
+        <select id="tuningSelect">
+          <option value="E Standard">E Standard</option>
+          <option value="D Standard">D Standard</option>
+          <option value="Drop D">Drop D</option>
+          <option value="C Standard">C Standard</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="bpmInput">Tempo (BPM)</label>
+        <input id="bpmInput" type="number" min="60" max="240" value="90">
+      </div>
+
+      <div class="control-group">
+        <label for="stepsSelect">Steps</label>
+        <select id="stepsSelect">
+          <option value="8">8</option>
+          <option value="16" selected>16</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label>&nbsp;</label>
+        <div class="btn-group">
+          <button type="button" id="playBtn" class="btn btn-primary" aria-label="Play riff">Play</button>
+          <button type="button" id="stopBtn" class="btn" aria-label="Stop playback">Stop</button>
+          <button type="button" id="demoBtn" class="btn" aria-label="Load an example riff">Load Demo</button>
+          <button type="button" id="clearBtn" class="btn btn-subtle" aria-label="Clear grid">Clear</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sequencer grid -->
+  <section class="panel">
+    <div class="panel-heading-row">
+      <h2>Riff Grid</h2>
+      <span class="selected-readout" id="selectedReadout">No cell selected</span>
+    </div>
+    <p class="micro-help">Click a step on any string, then type a fret number (0–24) directly on your keyboard. Notes on multiple strings in the same step play together.</p>
+    <div class="grid-wrapper" style="margin-top:10px;">
+      <div id="gridContainer"></div>
+    </div>
+    <p class="tool-note"><span class="shortcut">← ↑ ↓ →</span> move &nbsp; <span class="shortcut">0–24</span> set fret &nbsp; <span class="shortcut">X</span> mute &nbsp; <span class="shortcut">Del</span> clear &nbsp; <span class="shortcut">Space</span> play / stop &nbsp; <span class="shortcut">Esc</span> deselect</p>
+  </section>
+
+  <!-- Fret selector -->
+  <section class="panel">
+    <h2>Fret Editor</h2>
+    <p class="palette-hint">
+      Select a grid cell, then type a fret number directly on your keyboard (0–24) or use the field below.
+      Press <strong>X</strong> for mute and <strong>Delete/Backspace</strong> to clear.
+    </p>
+
+    <div class="manual-fret-row">
+      <div class="control-group">
+        <label for="fretInput">Fret (0–24)</label>
+        <input id="fretInput" type="number" min="0" max="24" inputmode="numeric" placeholder="e.g. 12">
+      </div>
+      <button type="button" id="applyFretBtn" class="btn btn-primary">Apply Fret</button>
+      <button type="button" id="manualMuteBtn" class="btn">Mute (X)</button>
+      <button type="button" id="manualClearBtn" class="btn">Clear Cell</button>
+      <span id="typingHint" class="typing-hint" aria-live="polite"></span>
+    </div>
+
+    <p class="palette-hint">Quick-pick buttons (optional):</p>
+    <div class="fret-palette" id="fretPalette">
+      <!-- fret buttons injected by JS -->
+    </div>
+  </section>
+
+  <!-- TAB output -->
+  <section class="panel">
+    <h2>ASCII Tab</h2>
+    <pre id="tabOutput"></pre>
+    <div class="tab-actions">
+      <button type="button" id="copyTabBtn" class="btn" aria-label="Copy tab to clipboard">Copy TAB</button>
+      <button type="button" id="downloadTabBtn" class="btn" aria-label="Download tab as a text file">Download .txt</button>
+      <span id="copyConfirm" class="copy-confirm">Copied!</span>
+    </div>
+  </section>
+
+  <!-- Random idea generator -->
+  <section class="panel">
+    <h2>Idea Generator</h2>
+    <div class="controls-row">
+      <div class="control-group">
+        <label for="scaleSelect">Scale</label>
+        <select id="scaleSelect">
+          <option value="Natural Minor">Natural Minor</option>
+          <option value="Phrygian">Phrygian</option>
+          <option value="Chromatic">Chromatic</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>&nbsp;</label>
+        <button type="button" id="generateBtn" class="btn" aria-label="Generate riff idea">Generate Idea</button>
+      </div>
+      <div class="control-group">
+        <label>&nbsp;</label>
+        <button type="button" id="newRiffBtn" class="btn" aria-label="Start a new riff">New Riff</button>
+      </div>
+    </div>
+    <p class="tool-note">Idea Generator uses simple scale rules and randomness — no AI or network connection is involved.</p>
+  </section>
+
+</main>
+
+<footer class="about">
+  <p>RiffSketch is an experimental browser-based tool for quickly capturing guitar riff ideas without opening a DAW.</p>
+  <p>Built by Enes Burak Yazan — Bursa Uludağ University</p>
+  <p>Developed with Claude as a coding collaborator.</p>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================
+     1. TUNING DATA
+     Each tuning is stored low string -> high string (index 0
+     is the lowest-pitched string, index 5 is the highest).
+  ========================================================= */
+  const TUNINGS = {
+    "E Standard": ["E2", "A2", "D3", "G3", "B3", "E4"],
+    "D Standard": ["D2", "G2", "C3", "F3", "A3", "D4"],
+    "Drop D":     ["D2", "A2", "D3", "G3", "B3", "E4"],
+    "C Standard": ["C2", "F2", "Bb2", "Eb3", "G3", "C4"]
+  };
+
+  const SCALES = {
+    "Natural Minor": [0, 2, 3, 5, 7, 8, 10, 12],
+    "Phrygian":      [0, 1, 3, 5, 7, 8, 10, 12],
+    "Chromatic":     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+  };
+
+  const STORAGE_KEY = "riffsketch_state_v1";
+  const NUM_STRINGS = 6;
+
+  /* =========================================================
+     2. APPLICATION STATE
+  ========================================================= */
+  let state = {
+    tuning: "E Standard",
+    bpm: 90,
+    steps: 16,
+    scale: "Natural Minor",
+    grid: null // grid[stringIndex][stepIndex] = null | 'X' | fretNumber
+  };
+
+  let selected = null; // { string, step } or null
+
+  function createEmptyGrid(steps){
+    const grid = [];
+    for (let s = 0; s < NUM_STRINGS; s++){
+      grid.push(new Array(steps).fill(null));
+    }
+    return grid;
+  }
+
+  function resizeGrid(newSteps){
+    for (let s = 0; s < NUM_STRINGS; s++){
+      const row = state.grid[s];
+      if (newSteps > row.length){
+        while (row.length < newSteps) row.push(null);
+      } else {
+        row.length = newSteps;
+      }
+    }
+    state.steps = newSteps;
+    if (selected && selected.step >= newSteps) selected = null;
+  }
+
+  /* =========================================================
+     DOM REFERENCES
+  ========================================================= */
+  const tuningSelect = document.getElementById("tuningSelect");
+  const bpmInput = document.getElementById("bpmInput");
+  const stepsSelect = document.getElementById("stepsSelect");
+  const playBtn = document.getElementById("playBtn");
+  const stopBtn = document.getElementById("stopBtn");
+  const demoBtn = document.getElementById("demoBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const gridContainer = document.getElementById("gridContainer");
+  const fretPalette = document.getElementById("fretPalette");
+  const fretInput = document.getElementById("fretInput");
+  const applyFretBtn = document.getElementById("applyFretBtn");
+  const manualMuteBtn = document.getElementById("manualMuteBtn");
+  const manualClearBtn = document.getElementById("manualClearBtn");
+  const typingHint = document.getElementById("typingHint");
+  const tabOutput = document.getElementById("tabOutput");
+  const copyTabBtn = document.getElementById("copyTabBtn");
+  const downloadTabBtn = document.getElementById("downloadTabBtn");
+  const copyConfirm = document.getElementById("copyConfirm");
+  const selectedReadout = document.getElementById("selectedReadout");
+  const scaleSelect = document.getElementById("scaleSelect");
+  const generateBtn = document.getElementById("generateBtn");
+  const newRiffBtn = document.getElementById("newRiffBtn");
+
+  /* =========================================================
+     3. GRID RENDERING
+     Strings are displayed highest-pitch on top, matching
+     conventional guitar TAB layout.
+  ========================================================= */
+  function renderGrid(){
+    const notes = TUNINGS[state.tuning];
+    const displayOrder = [5, 4, 3, 2, 1, 0]; // high string first
+    let html = "";
+
+    // Step numbers make the sequencer much easier to scan at a glance.
+    html += '<div class="step-number-row">';
+    html += '<div class="step-number-spacer"></div>';
+    html += '<div class="step-numbers" style="grid-template-columns: repeat(' + state.steps + ', minmax(34px, 1fr));">';
+    for (let step = 0; step < state.steps; step++){
+      html += '<div class="step-number' + (step % 4 === 0 ? ' beat' : '') +
+              '" data-step="' + step + '">' + (step + 1) + '</div>';
+    }
+    html += '</div></div>';
+
+    displayOrder.forEach(function(sIdx){
+      html += '<div class="string-row">';
+      html += '<div class="string-label">' + notes[sIdx] + '</div>';
+      html += '<div class="string-cells" style="grid-template-columns: repeat(' + state.steps + ', minmax(34px, 1fr));">';
+
+      for (let step = 0; step < state.steps; step++){
+        const val = state.grid[sIdx][step];
+        const hasNote = val !== null && val !== undefined;
+        const isSelected = selected && selected.string === sIdx && selected.step === step;
+        const display = hasNote ? val : "\u2014"; // em dash for empty
+        const noteDesc = hasNote ? (val === "X" ? "muted" : "fret " + val) : "empty";
+
+        html += '<button type="button" class="step-cell' +
+                (isSelected ? ' selected' : '') +
+                (hasNote ? ' has-note' : '') +
+                (step % 4 === 0 ? ' beat-start' : '') + '"' +
+                ' data-string="' + sIdx + '" data-step="' + step + '"' +
+                ' aria-label="String ' + notes[sIdx] + ', step ' + (step + 1) + ', ' + noteDesc + '">' +
+                display + '</button>';
+      }
+
+      html += '</div></div>';
+    });
+
+    gridContainer.innerHTML = html;
+
+    // Attach click handlers to freshly-created cells
+    const cells = gridContainer.querySelectorAll(".step-cell");
+    cells.forEach(function(cell){
+      cell.addEventListener("click", onCellClick);
+    });
+
+    updateSelectedUI();
+  }
+
+  function onCellClick(e){
+    const btn = e.currentTarget;
+    const s = parseInt(btn.dataset.string, 10);
+    const step = parseInt(btn.dataset.step, 10);
+    selected = { string: s, step: step };
+    resetFretTypingBuffer();
+    renderGrid();
+    focusSelectedCell();
+  }
+
+  function focusSelectedCell(){
+    if (!selected) return;
+    const cell = gridContainer.querySelector(
+      '.step-cell[data-string="' + selected.string + '"][data-step="' + selected.step + '"]'
+    );
+    if (!cell) return;
+
+    try{
+      cell.focus({ preventScroll: true });
+    } catch (e){
+      cell.focus();
+    }
+
+    // Keep keyboard navigation usable when the sequencer overflows horizontally.
+    try{
+      cell.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+    } catch (e){
+      cell.scrollIntoView(false);
+    }
+  }
+
+  function moveSelection(direction){
+    if (!selected) return;
+
+    let nextString = selected.string;
+    let nextStep = selected.step;
+
+    if (direction === "left"){
+      nextStep = Math.max(0, selected.step - 1);
+    } else if (direction === "right"){
+      nextStep = Math.min(state.steps - 1, selected.step + 1);
+    } else if (direction === "up"){
+      // Display order is high string (index 5) at the top.
+      nextString = Math.min(NUM_STRINGS - 1, selected.string + 1);
+    } else if (direction === "down"){
+      nextString = Math.max(0, selected.string - 1);
+    }
+
+    if (nextString === selected.string && nextStep === selected.step) return;
+
+    selected = { string: nextString, step: nextStep };
+    resetFretTypingBuffer();
+    renderGrid();
+    focusSelectedCell();
+  }
+
+  function updateSelectedUI(){
+    const fretButtons = fretPalette.querySelectorAll("button");
+    const hasSelection = !!selected;
+    fretButtons.forEach(function(btn){ btn.disabled = !hasSelection; });
+
+    fretInput.disabled = !hasSelection;
+    applyFretBtn.disabled = !hasSelection;
+    manualMuteBtn.disabled = !hasSelection;
+    manualClearBtn.disabled = !hasSelection;
+
+    if (!selected){
+      selectedReadout.textContent = "No cell selected";
+      fretInput.value = "";
+      return;
+    }
+
+    const note = TUNINGS[state.tuning][selected.string];
+    const value = state.grid[selected.string][selected.step];
+    const shown = value === null || value === undefined ? "empty" : (value === "X" ? "muted" : "fret " + value);
+    selectedReadout.textContent = note + " · step " + (selected.step + 1) + " · " + shown;
+
+    if (typeof value === "number"){
+      fretInput.value = value;
+    } else {
+      fretInput.value = "";
+    }
+  }
+
+  /* =========================================================
+     4. NOTE / FRET EDITING
+  ========================================================= */
+  function buildFretPalette(){
+    let html = "";
+    for (let f = 0; f <= 24; f++){
+      html += '<button type="button" class="btn fret-btn" data-fret="' + f + '" aria-label="Set fret ' + f + '">' + f + '</button>';
+    }
+    html += '<button type="button" class="btn fret-btn" id="fretMuteBtn" aria-label="Set muted note">X</button>';
+    html += '<button type="button" class="btn" id="fretClearBtn" aria-label="Clear selected cell">Clear Cell</button>';
+    fretPalette.innerHTML = html;
+
+    fretPalette.querySelectorAll(".fret-btn[data-fret]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        applyValueToSelectedCell(parseInt(btn.dataset.fret, 10));
+      });
+    });
+    document.getElementById("fretMuteBtn").addEventListener("click", function(){
+      applyValueToSelectedCell("X");
+    });
+    document.getElementById("fretClearBtn").addEventListener("click", function(){
+      applyValueToSelectedCell(null);
+    });
+    updateSelectedUI();
+  }
+
+  function applyValueToSelectedCell(value){
+    if (!selected) return;
+
+    if (typeof value === "number"){
+      value = Math.max(0, Math.min(24, Math.round(value)));
+    }
+
+    state.grid[selected.string][selected.step] = value;
+    renderGrid();
+    renderTab();
+    saveState();
+  }
+
+  function applyManualFret(){
+    if (!selected) return;
+    const raw = fretInput.value.trim();
+    if (raw === "") return;
+
+    let fret = parseInt(raw, 10);
+    if (isNaN(fret)) return;
+
+    fret = Math.max(0, Math.min(24, fret));
+    fretInput.value = fret;
+    applyValueToSelectedCell(fret);
+  }
+
+  let fretTypingBuffer = "";
+  let fretTypingTimer = null;
+
+  function resetFretTypingBuffer(){
+    fretTypingBuffer = "";
+    if (fretTypingTimer !== null){
+      clearTimeout(fretTypingTimer);
+      fretTypingTimer = null;
+    }
+    if (typingHint) typingHint.textContent = "";
+  }
+
+  function handleDirectFretDigit(digit){
+    if (!selected) return;
+
+    if (fretTypingTimer !== null){
+      clearTimeout(fretTypingTimer);
+      fretTypingTimer = null;
+    }
+
+    const candidate = fretTypingBuffer + digit;
+    const numeric = parseInt(candidate, 10);
+
+    // Allow only 0–24. If the combined number is too high,
+    // start a fresh one-digit entry with the latest key.
+    if (!isNaN(numeric) && numeric <= 24){
+      fretTypingBuffer = candidate;
+    } else {
+      fretTypingBuffer = digit;
+    }
+
+    let fret = parseInt(fretTypingBuffer, 10);
+    if (fret > 24) fret = 24;
+
+    applyValueToSelectedCell(fret);
+    if (typingHint) typingHint.textContent = "Typed fret: " + fret;
+
+    // Two-digit entry window, e.g. pressing 1 then 7 quickly produces fret 17.
+    fretTypingTimer = setTimeout(function(){
+      resetFretTypingBuffer();
+    }, 700);
+  }
+
+  /* =========================================================
+     5. FREQUENCY CALCULATION
+     Converts a note name (e.g. "E2", "Bb2") to a MIDI number,
+     then converts (tuning + fret) to a frequency using equal
+     temperament.
+  ========================================================= */
+  const NOTE_INDEX = {
+    "C": 0, "C#": 1, "Db": 1,
+    "D": 2, "D#": 3, "Eb": 3,
+    "E": 4,
+    "F": 5, "F#": 6, "Gb": 6,
+    "G": 7, "G#": 8, "Ab": 8,
+    "A": 9, "A#": 10, "Bb": 10,
+    "B": 11
+  };
+
+  function noteNameToMidi(noteName){
+    const match = /^([A-Ga-g])([#b]?)(-?\d+)$/.exec(noteName);
+    if (!match) return 40; // fallback: low E
+    const letter = match[1].toUpperCase();
+    const accidental = match[2] === "#" ? "#" : (match[2] === "b" ? "b" : "");
+    const octave = parseInt(match[3], 10);
+    const key = letter + accidental;
+    const pitchClass = NOTE_INDEX.hasOwnProperty(key) ? NOTE_INDEX[key] : 0;
+    return 12 * (octave + 1) + pitchClass;
+  }
+
+  function fretToFrequency(stringIndex, fret){
+    const openNote = TUNINGS[state.tuning][stringIndex];
+    const openMidi = noteNameToMidi(openNote);
+    const midi = openMidi + fret;
+    return 440 * Math.pow(2, (midi - 69) / 12);
+  }
+
+  /* =========================================================
+     6. WEB AUDIO ENGINE
+     Lazily-created AudioContext. Oscillator-based "plucked"
+     tone with a waveshaper (subtle distortion) and a lowpass
+     filter, plus a short noise burst for muted (X) notes.
+  ========================================================= */
+  let audioCtx = null;
+  let distortionCurve = null;
+  let masterGain = null;
+  let masterCompressor = null;
+
+  function makeDistortionCurve(amount){
+    const samples = 44100;
+    const curve = new Float32Array(samples);
+    const deg = Math.PI / 180;
+    for (let i = 0; i < samples; i++){
+      const x = (i * 2) / samples - 1;
+      curve[i] = (3 + amount) * x * 20 * deg / (Math.PI + amount * Math.abs(x));
+    }
+    return curve;
+  }
+
+  function ensureAudioContext(){
+    if (!audioCtx){
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioCtor();
+      distortionCurve = makeDistortionCurve(12);
+
+      // A shared master chain prevents simple multi-string chords from clipping.
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.72;
+
+      masterCompressor = audioCtx.createDynamicsCompressor();
+      masterCompressor.threshold.value = -16;
+      masterCompressor.knee.value = 18;
+      masterCompressor.ratio.value = 5;
+      masterCompressor.attack.value = 0.003;
+      masterCompressor.release.value = 0.12;
+
+      masterGain.connect(masterCompressor);
+      masterCompressor.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === "suspended"){
+      audioCtx.resume();
+    }
+  }
+
+  function stepDurationSeconds(){
+    // Each step is a sixteenth note.
+    return 60.0 / state.bpm / 4;
+  }
+
+  function playPitchedNote(freq, time){
+    if (!audioCtx) return;
+    const duration = Math.min(stepDurationSeconds() * 0.9, 0.32);
+
+    const osc = audioCtx.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(freq, time);
+
+    const shaper = audioCtx.createWaveShaper();
+    shaper.curve = distortionCurve;
+    shaper.oversample = "2x";
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = "lowpass";
+    const cutoff = Math.min(5000, Math.max(900, freq * 6));
+    filter.frequency.setValueAtTime(cutoff, time);
+    filter.Q.value = 0.6;
+
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.setValueAtTime(0.0001, time);
+    gainNode.gain.linearRampToValueAtTime(0.32, time + 0.006);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+    osc.connect(shaper);
+    shaper.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(masterGain);
+
+    osc.start(time);
+    osc.stop(time + duration + 0.03);
+
+    // Clean up nodes once playback finishes so they don't accumulate.
+    osc.onended = function(){
+      osc.disconnect();
+      shaper.disconnect();
+      filter.disconnect();
+      gainNode.disconnect();
+    };
+  }
+
+  function playMutedClick(time){
+    if (!audioCtx) return;
+    const bufferSize = Math.floor(audioCtx.sampleRate * 0.05);
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++){
+      data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    }
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    const bandpass = audioCtx.createBiquadFilter();
+    bandpass.type = "bandpass";
+    bandpass.frequency.value = 1800;
+    bandpass.Q.value = 0.8;
+
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.setValueAtTime(0.4, time);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
+
+    noise.connect(bandpass);
+    bandpass.connect(gainNode);
+    gainNode.connect(masterGain);
+
+    noise.start(time);
+    noise.stop(time + 0.07);
+
+    noise.onended = function(){
+      noise.disconnect();
+      bandpass.disconnect();
+      gainNode.disconnect();
+    };
+  }
+
+  /* =========================================================
+     7. SEQUENCER TIMING
+     Uses a lookahead scheduler (setTimeout polling + precise
+     AudioContext time scheduling) for stable timing that isn't
+     tied directly to setInterval jitter.
+  ========================================================= */
+  let isPlaying = false;
+  let currentStep = 0;
+  let nextNoteTime = 0.0;
+  let schedulerTimerId = null;
+  let playbackSession = 0;
+  const scheduledVisualTimers = new Set();
+  const scheduleAheadTime = 0.1; // seconds
+  const lookaheadMs = 25;
+
+  function scheduleStep(stepNumber, time){
+    // Schedule the visual highlight to occur at the right moment.
+    const delayMs = Math.max(0, (time - audioCtx.currentTime) * 1000);
+    const sessionAtSchedule = playbackSession;
+    const timerId = setTimeout(function(){
+      scheduledVisualTimers.delete(timerId);
+      if (sessionAtSchedule === playbackSession) highlightStep(stepNumber);
+    }, delayMs);
+    scheduledVisualTimers.add(timerId);
+
+    for (let s = 0; s < NUM_STRINGS; s++){
+      const val = state.grid[s][stepNumber];
+      if (val === null || val === undefined) continue;
+      if (val === "X"){
+        playMutedClick(time);
+      } else {
+        const freq = fretToFrequency(s, val);
+        playPitchedNote(freq, time);
+      }
+    }
+  }
+
+  function advanceStep(){
+    nextNoteTime += stepDurationSeconds();
+    currentStep = (currentStep + 1) % state.steps;
+  }
+
+  function scheduler(){
+    while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime){
+      scheduleStep(currentStep, nextNoteTime);
+      advanceStep();
+    }
+    schedulerTimerId = setTimeout(scheduler, lookaheadMs);
+  }
+
+  function startPlayback(){
+    if (isPlaying) return;
+    ensureAudioContext();
+    isPlaying = true;
+    playbackSession++;
+    currentStep = 0;
+    nextNoteTime = audioCtx.currentTime + 0.05;
+    scheduler();
+    updatePlaybackButtons();
+  }
+
+  function stopPlayback(){
+    isPlaying = false;
+    playbackSession++;
+    if (schedulerTimerId !== null){
+      clearTimeout(schedulerTimerId);
+      schedulerTimerId = null;
+    }
+    scheduledVisualTimers.forEach(function(id){ clearTimeout(id); });
+    scheduledVisualTimers.clear();
+    clearHighlight();
+    updatePlaybackButtons();
+  }
+
+  function togglePlayback(){
+    if (isPlaying) stopPlayback(); else startPlayback();
+  }
+
+  function updatePlaybackButtons(){
+    playBtn.disabled = isPlaying;
+    stopBtn.disabled = !isPlaying;
+  }
+
+  function highlightStep(stepNumber){
+    if (!isPlaying) return; // guard against late callbacks after Stop
+    clearHighlight();
+    const cells = gridContainer.querySelectorAll('.step-cell[data-step="' + stepNumber + '"]');
+    cells.forEach(function(c){ c.classList.add("playing"); });
+    const number = gridContainer.querySelector('.step-number[data-step="' + stepNumber + '"]');
+    if (number) number.classList.add("playing");
+  }
+
+  function clearHighlight(){
+    gridContainer.querySelectorAll(".step-cell.playing, .step-number.playing").forEach(function(c){
+      c.classList.remove("playing");
+    });
+  }
+
+  /* =========================================================
+     8. TAB GENERATION
+     Every step is rendered as a fixed 2-character token so
+     columns stay aligned even when a fret is two digits (10-24).
+  ========================================================= */
+  function cellToken(value){
+    if (value === null || value === undefined) return "--";
+    if (value === "X") return "x-";
+    const str = String(value);
+    return str.length === 1 ? str + "-" : str;
+  }
+
+  function buildTabString(){
+    const notes = TUNINGS[state.tuning];
+    const order = [5, 4, 3, 2, 1, 0];
+    const lines = order.map(function(sIdx){
+      const label = notes[sIdx].padEnd(3, " ");
+      const tokens = [];
+      for (let step = 0; step < state.steps; step++){
+        tokens.push(cellToken(state.grid[sIdx][step]));
+      }
+      return label + "|-" + tokens.join("-") + "-|";
+    });
+    return lines.join("\n");
+  }
+
+  function renderTab(){
+    tabOutput.textContent = buildTabString();
+  }
+
+  /* =========================================================
+     9. RANDOM RIFF GENERATION
+     Produces a simple riff centred on the lowest string,
+     favouring the open string and lower frets, with occasional
+     empty steps and repeated notes.
+  ========================================================= */
+  function generateIdea(){
+    stopPlayback();
+    state.grid = createEmptyGrid(state.steps);
+    const offsets = SCALES[state.scale];
+    const lowStringIdx = 0; // index 0 = lowest-pitched string
+    let lastFret = 0;
+
+    for (let step = 0; step < state.steps; step++){
+      const r = Math.random();
+      if (r < 0.15){
+        // leave this step empty
+        continue;
+      } else if (r < 0.55){
+        // strongly favour the open string, sometimes repeat the last fret
+        state.grid[lowStringIdx][step] = (Math.random() < 0.6) ? 0 : lastFret;
+      } else {
+        // pick a scale offset, biased toward the lower (earlier) ones
+        const biasedIndex = Math.floor(Math.pow(Math.random(), 2) * offsets.length);
+        const fret = offsets[Math.min(biasedIndex, offsets.length - 1)];
+        state.grid[lowStringIdx][step] = fret;
+        lastFret = fret;
+      }
+    }
+
+    selected = null;
+    renderGrid();
+    renderTab();
+    saveState();
+  }
+
+
+  function loadDemoRiff(){
+    stopPlayback();
+    state.steps = 16;
+    stepsSelect.value = "16";
+    state.bpm = 170;
+    bpmInput.value = "170";
+    state.grid = createEmptyGrid(16);
+
+    // Original, generic low-string motif created only to demonstrate the tool.
+    const pattern = [0, 0, 3, 0, 5, 3, 0, null, 0, 0, 7, 5, 3, 0, "X", 0];
+    pattern.forEach(function(value, step){
+      state.grid[0][step] = value;
+    });
+
+    selected = null;
+    renderGrid();
+    renderTab();
+    saveState();
+  }
+
+  function downloadTab(){
+    const text = buildTabString();
+    const blob = new Blob([text + "\n"], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "riffsketch-tab.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 0);
+  }
+
+  /* =========================================================
+     10. LOCAL STORAGE
+  ========================================================= */
+  function saveState(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e){
+      // storage may be unavailable (private browsing, quota) — fail silently
+    }
+  }
+
+  function loadState(){
+    let restored = null;
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) restored = JSON.parse(raw);
+    } catch (e){
+      restored = null;
+    }
+
+    if (restored && TUNINGS[restored.tuning] && (restored.steps === 8 || restored.steps === 16) &&
+        Array.isArray(restored.grid) && restored.grid.length === NUM_STRINGS){
+      state.tuning = restored.tuning;
+      state.bpm = Math.min(240, Math.max(60, parseInt(restored.bpm, 10) || 90));
+      state.steps = restored.steps;
+      state.scale = SCALES[restored.scale] ? restored.scale : "Natural Minor";
+      state.grid = restored.grid.map(function(row){
+        const fixed = row.slice(0, state.steps).map(function(value){
+          if (value === "X" || value === null || value === undefined) return value === undefined ? null : value;
+          const fret = parseInt(value, 10);
+          return (!isNaN(fret) && fret >= 0 && fret <= 24) ? fret : null;
+        });
+        while (fixed.length < state.steps) fixed.push(null);
+        return fixed;
+      });
+    } else {
+      state.grid = createEmptyGrid(state.steps);
+    }
+  }
+
+  /* =========================================================
+     11. EVENT LISTENERS
+  ========================================================= */
+  function attachEventListeners(){
+    tuningSelect.addEventListener("change", function(){
+      state.tuning = tuningSelect.value;
+      renderGrid();
+      renderTab();
+      saveState();
+    });
+
+    bpmInput.addEventListener("change", function(){
+      let val = parseInt(bpmInput.value, 10);
+      if (isNaN(val)) val = 90;
+      val = Math.min(240, Math.max(60, val));
+      bpmInput.value = val;
+      state.bpm = val;
+      saveState();
+    });
+
+    stepsSelect.addEventListener("change", function(){
+      stopPlayback();
+      const newSteps = parseInt(stepsSelect.value, 10);
+      resizeGrid(newSteps);
+      renderGrid();
+      renderTab();
+      saveState();
+    });
+
+    playBtn.addEventListener("click", startPlayback);
+    stopBtn.addEventListener("click", stopPlayback);
+    demoBtn.addEventListener("click", loadDemoRiff);
+
+    clearBtn.addEventListener("click", function(){
+      stopPlayback();
+      state.grid = createEmptyGrid(state.steps);
+      selected = null;
+      renderGrid();
+      renderTab();
+      saveState();
+    });
+
+    applyFretBtn.addEventListener("click", applyManualFret);
+
+    fretInput.addEventListener("keydown", function(e){
+      if (e.key === "Enter"){
+        e.preventDefault();
+        applyManualFret();
+      }
+    });
+
+    manualMuteBtn.addEventListener("click", function(){
+      applyValueToSelectedCell("X");
+    });
+
+    manualClearBtn.addEventListener("click", function(){
+      applyValueToSelectedCell(null);
+    });
+
+    scaleSelect.addEventListener("change", function(){
+      state.scale = scaleSelect.value;
+      saveState();
+    });
+
+    generateBtn.addEventListener("click", generateIdea);
+
+    downloadTabBtn.addEventListener("click", downloadTab);
+
+    copyTabBtn.addEventListener("click", function(){
+      const text = buildTabString();
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(showCopiedConfirmation).catch(function(){
+          fallbackCopy(text);
+        });
+      } else {
+        fallbackCopy(text);
+      }
+    });
+
+    let newRiffConfirmPending = false;
+    let newRiffTimeoutId = null;
+
+    function resetNewRiffButton(){
+      newRiffConfirmPending = false;
+      newRiffBtn.textContent = "New Riff";
+      newRiffBtn.classList.remove("btn-danger");
+    }
+
+    newRiffBtn.addEventListener("click", function(){
+      if (!newRiffConfirmPending){
+        newRiffConfirmPending = true;
+        newRiffBtn.textContent = "Confirm New Riff?";
+        newRiffBtn.classList.add("btn-danger");
+        newRiffTimeoutId = setTimeout(resetNewRiffButton, 3000);
+      } else {
+        clearTimeout(newRiffTimeoutId);
+        resetNewRiffButton();
+        stopPlayback();
+        state = {
+          tuning: "E Standard",
+          bpm: 90,
+          steps: 16,
+          scale: "Natural Minor",
+          grid: createEmptyGrid(16)
+        };
+        selected = null;
+        tuningSelect.value = state.tuning;
+        bpmInput.value = state.bpm;
+        stepsSelect.value = String(state.steps);
+        scaleSelect.value = state.scale;
+        try{ localStorage.removeItem(STORAGE_KEY); } catch (e){ /* ignore */ }
+        renderGrid();
+        renderTab();
+      }
+    });
+
+    document.addEventListener("keydown", function(e){
+      const activeEl = document.activeElement;
+      const activeTag = activeEl ? activeEl.tagName.toLowerCase() : "";
+      const activeIsGridCell = !!(activeEl && activeEl.classList && activeEl.classList.contains("step-cell"));
+
+      // Inputs/selects/textareas and non-grid buttons keep their normal keyboard behaviour.
+      const isEditingField =
+        activeTag === "input" ||
+        activeTag === "select" ||
+        activeTag === "textarea" ||
+        (activeTag === "button" && !activeIsGridCell);
+
+      if (!isEditingField && selected){
+        if (e.key === "ArrowLeft"){
+          e.preventDefault();
+          moveSelection("left");
+          return;
+        }
+        if (e.key === "ArrowRight"){
+          e.preventDefault();
+          moveSelection("right");
+          return;
+        }
+        if (e.key === "ArrowUp"){
+          e.preventDefault();
+          moveSelection("up");
+          return;
+        }
+        if (e.key === "ArrowDown"){
+          e.preventDefault();
+          moveSelection("down");
+          return;
+        }
+
+        // Number keys directly enter frets while a grid cell is selected.
+        if (/^[0-9]$/.test(e.key)){
+          e.preventDefault();
+          handleDirectFretDigit(e.key);
+          return;
+        }
+
+        if (e.key === "x" || e.key === "X"){
+          e.preventDefault();
+          resetFretTypingBuffer();
+          applyValueToSelectedCell("X");
+          focusSelectedCell();
+          return;
+        }
+
+        if (e.key === "Backspace" || e.key === "Delete"){
+          e.preventDefault();
+          resetFretTypingBuffer();
+          applyValueToSelectedCell(null);
+          focusSelectedCell();
+          return;
+        }
+      }
+
+      if (e.code === "Space"){
+        if (isEditingField) return;
+        e.preventDefault();
+        resetFretTypingBuffer();
+        togglePlayback();
+      } else if (e.key === "Escape"){
+        if (isEditingField) return;
+        resetFretTypingBuffer();
+        selected = null;
+        renderGrid();
+      }
+    });
+  }
+
+  function showCopiedConfirmation(){
+    copyConfirm.classList.add("show");
+    setTimeout(function(){ copyConfirm.classList.remove("show"); }, 1500);
+  }
+
+  function fallbackCopy(text){
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    try{
+      document.execCommand("copy");
+      showCopiedConfirmation();
+    } catch (e){
+      // clipboard unavailable — silently ignore
+    }
+    document.body.removeChild(textarea);
+  }
+
+  /* =========================================================
+     12. INITIALIZATION
+  ========================================================= */
+  function init(){
+    loadState();
+
+    tuningSelect.value = state.tuning;
+    bpmInput.value = state.bpm;
+    stepsSelect.value = String(state.steps);
+    scaleSelect.value = state.scale;
+
+    buildFretPalette();
+    renderGrid();
+    renderTab();
+    updatePlaybackButtons();
+    attachEventListeners();
+  }
+
+  init();
+})();
+</script>
+
+</body>
+</html>
